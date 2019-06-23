@@ -29,6 +29,8 @@
 // float    Changes       Total number of changes tracked so far
 //
 // Changes:
+//  06-22-19
+//		Updated to follow new XP formula while preserving previous formula for RoF2EMU and UFEMU
 //
 //  02-20-14
 //     Removed all leadership AA tracking. - dewey2461
@@ -48,7 +50,7 @@
 //
 //  09-19-04
 //     New changelog. Less clutter.  Meh.
-//     Everything's done with the points straight from the client.  1-330 for xp/aa
+//     Everything's done with the points straight from the client.  1-1000 for xp/aa
 //     and 1-1000 for laa/rlaa.  Percentages are only displayed when needed in output.
 //     No sense dealing with the issues in storing a float, and the possible rounding
 //     errors etc.
@@ -69,6 +71,13 @@ using namespace std;
 #include <list>
 
 PreSetup("MQ2XPTracker");
+#if defined(UFEMU) || defined(ROF2EMU)
+__int64 XPTotalPerLevel = 330;
+float XPTotalDivider = 3.30f;
+#else
+__int64 XPTotalPerLevel = 100000;
+float XPTotalDivider = 1000.0f;
+#endif
 
 enum XP_TYPES {
   Experience,
@@ -176,16 +185,16 @@ class MQ2XPTrackerType : public MQ2Type
 
     if(!strcmp(Type,"Experience"))
     {
-      FLOAT TotalXP = (float)TrackXP[Experience].Total/3.30f;
+      FLOAT TotalXP = (float)TrackXP[Experience].Total/XPTotalDivider;
       return (float)TotalXP/RunningTimeFloat;
     }
     else if(!strcmp(Type,"AltExperience"))
     {
-      FLOAT TotalXP = (float)TrackXP[AltExperience].Total/3.30f;
+      FLOAT TotalXP = (float)TrackXP[AltExperience].Total/XPTotalDivider;
       return (float)TotalXP/RunningTimeFloat;
     }
 
-    FLOAT TotalXP = (float)TrackXP[Experience].Total/3.30f + (float)TrackXP[AltExperience].Total/3.30f ;
+    FLOAT TotalXP = (float)TrackXP[Experience].Total/XPTotalDivider + (float)TrackXP[AltExperience].Total/XPTotalDivider ;
     return (float)TotalXP/RunningTimeFloat;
 
   }
@@ -209,13 +218,13 @@ class MQ2XPTrackerType : public MQ2Type
       switch (_id)
       {
         case 0:
-        Dest.Float=(float)TrackXP[Experience].Total/3.30f + (float)TrackXP[AltExperience].Total/3.30f ;
+        Dest.Float=(float)TrackXP[Experience].Total/XPTotalDivider + (float)TrackXP[AltExperience].Total/XPTotalDivider ;
         break;
         case 1:
-        Dest.Float=(float)TrackXP[Experience].Total/3.30f;
+        Dest.Float=(float)TrackXP[Experience].Total/XPTotalDivider;
         break;
         case 2:
-        Dest.Float=(float)TrackXP[AltExperience].Total/3.30f;
+        Dest.Float=(float)TrackXP[AltExperience].Total/XPTotalDivider;
         break;
         default:
         return false;
@@ -244,10 +253,10 @@ class MQ2XPTrackerType : public MQ2Type
       switch (_id)
       {
         case 1:
-        Dest.Float=Averages.xp/3.30f;
+        Dest.Float=Averages.xp/XPTotalDivider;
         break;
         case 2:
-        Dest.Float=Averages.aa/3.30f;
+        Dest.Float=Averages.aa/XPTotalDivider;
         break;
         default:
         return false;
@@ -260,11 +269,11 @@ class MQ2XPTrackerType : public MQ2Type
       switch (_id)
       {
         case 1:
-        needed = 330-GetCharInfo()->Exp;
+        needed = XPTotalPerLevel-GetCharInfo()->Exp;
         Dest.Float=(float)needed/(Averages.xp*GetKPH());
         break;
         case 2:
-        needed = 330-GetCharInfo()->AAExp;
+        needed = XPTotalPerLevel-GetCharInfo()->AAExp;
         Dest.Float=(float)needed/(Averages.aa*GetKPH());
         break;
         default:
@@ -392,11 +401,11 @@ BOOL CheckExpChange()
   __int64 Current = pCharInfo->Exp;
   if (Current!=TrackXP[Experience].Base) {
     if (LossFromDeath) {
-      TrackXP[Experience].Gained = TrackXP[Experience].Base > Current ? TrackXP[Experience].Base - Current : 330 - Current + TrackXP[Experience].Base;
+      TrackXP[Experience].Gained = TrackXP[Experience].Base > Current ? TrackXP[Experience].Base - Current : XPTotalPerLevel - Current + TrackXP[Experience].Base;
       TrackXP[Experience].Total -= TrackXP[Experience].Gained;
       LossFromDeath = 0;
     } else {
-      TrackXP[Experience].Gained = pCharInfo2->Level == PlayerLevel ? Current - TrackXP[Experience].Base : 330 - TrackXP[Experience].Base + Current;
+      TrackXP[Experience].Gained = pCharInfo2->Level == PlayerLevel ? Current - TrackXP[Experience].Base : XPTotalPerLevel - TrackXP[Experience].Base + Current;
       TrackXP[Experience].Total += TrackXP[Experience].Gained;
     }
     TrackXP[Experience].Base = Current;
@@ -413,7 +422,7 @@ BOOL CheckAAChange()
   PCHARINFO2 pCharInfo2 = GetCharInfo2();
   DWORD Current = pCharInfo->AAExp;
   if (Current!=TrackXP[AltExperience].Base) {
-    TrackXP[AltExperience].Gained = pCharInfo2->AAPoints == PlayerAA ? Current - TrackXP[AltExperience].Base : 330 - TrackXP[AltExperience].Base + Current;
+    TrackXP[AltExperience].Gained = pCharInfo2->AAPoints == PlayerAA ? Current - TrackXP[AltExperience].Base : XPTotalPerLevel - TrackXP[AltExperience].Base + Current;
     TrackXP[AltExperience].Total +=TrackXP[AltExperience].Gained;
     TrackXP[AltExperience].Base = Current;
     PlayerAA = pCharInfo2->AAPoints;
@@ -460,8 +469,8 @@ VOID XPEventsCommand(PSPAWNINFO pChar, PCHAR szLine)
       sprintf_s(szTemp,"%02d:%02d:%02d",pEvents->Timestamp.systime.wHour,pEvents->Timestamp.systime.wMinute,pEvents->Timestamp.systime.wSecond);
       WriteChatf("%03d - %02.2f%%XP %02.2f%%AA %02.2f%% at %s (%d system ticks):",
       i,
-      (float)pEvents->xp/3.30f,
-      (float)pEvents->aa/3.30f,
+      (float)pEvents->xp/XPTotalDivider,
+      (float)pEvents->aa/XPTotalDivider,
       szTemp,
       pEvents->Timestamp.systicks);
 
@@ -481,7 +490,7 @@ VOID XPTrackerCommand(PSPAWNINFO pChar, PCHAR szLine)
     bFirstCall=true;
     WriteChatColor("MQ2XPTracker::XP tracking reset.");
   } else if (!_strnicmp(szTemp,"total",5)) {
-    sprintf_s(szTemp,"Total XP Gained (Normal/AA): %03.3f%%/%03.3f%%",(float)TrackXP[Experience].Total/3.30f,(float)TrackXP[AltExperience].Total/3.30f);
+    sprintf_s(szTemp,"Total XP Gained (Normal/AA): %03.3f%%/%03.3f%%",(float)TrackXP[Experience].Total/XPTotalDivider,(float)TrackXP[AltExperience].Total/XPTotalDivider);
     WriteChatColor(szTemp);
     return;
   } else if (!_strnicmp(szTemp,"quiet",5)) {
@@ -541,19 +550,19 @@ VOID XPAverageCommand(PSPAWNINFO pChar, PCHAR szLine)
   __int64 needed;
   FLOAT KPH = (float)i/RunningTimeFloat;
   WriteChatf("Total run time: \ay%d hours %d minutes %d seconds\ax",RunningTimeHours,RunningTimeMinutes,RunningTimeSeconds);
-  WriteChatf("Average \ayxp\ax per kill: \ar%02.3f%%\ax   per-hour \ar%02.1f%%\ax",(float)(xp/3.30f)/i,(float)(xp/3.30f)/i*KPH);
-  WriteChatf("Average \ayaa\ax per kill: \ar%02.3f%%\ax   per-hour \ar%02.1f%%\ax",(float)(aa/3.30f)/i,(float)(aa/3.30f)/i*KPH);
+  WriteChatf("Average \ayxp\ax per kill: \ar%02.3f%%\ax   per-hour \ar%02.1f%%\ax",(float)(xp/XPTotalDivider)/i,(float)(xp/XPTotalDivider)/i*KPH);
+  WriteChatf("Average \ayaa\ax per kill: \ar%02.3f%%\ax   per-hour \ar%02.1f%%\ax",(float)(aa/XPTotalDivider)/i,(float)(aa/XPTotalDivider)/i*KPH);
   WriteChatf("Average \ay%1.2f\ax kills-per-hour", KPH);
   if (xp)
   {
-    needed = 330-GetCharInfo()->Exp;
+    needed = XPTotalPerLevel-GetCharInfo()->Exp;
     perkill = xp/i;
     perhour = perkill*KPH;
     WriteChatf("Estimated time to \ayxp\ax ding \ar%1.2f\ax hours", (float)needed/perhour);
   }
   if (aa)
   {
-    needed = 330-GetCharInfo()->AAExp;
+    needed = XPTotalPerLevel-GetCharInfo()->AAExp;
     perkill = aa/i;
     perhour = perkill*KPH;
     WriteChatf("Estimated time to \ayaa\ax ding \ar%1.2f\ax hours", (float)needed/perhour);
@@ -632,14 +641,14 @@ PLUGIN_API VOID OnPulse(VOID)
   if ( CheckExpChange() ) {
     gainedxp = true;
     if (!bQuietXP){
-      sprintf_s(szTemp,"XP Gained: %I64d (%02.3f%%) || XP Total: %I64d (%02.3f%%) ",TrackXP[Experience].Gained,(float)TrackXP[Experience].Gained/3.30f,TrackXP[Experience].Total,TrackXP[Experience].Total/3.30f);
+      sprintf_s(szTemp,"XP Gained: %I64d (%02.3f%%) || XP Total: %I64d (%02.3f%%) ",TrackXP[Experience].Gained,(float)TrackXP[Experience].Gained/XPTotalDivider,TrackXP[Experience].Total,TrackXP[Experience].Total/XPTotalDivider);
       WriteChatColor(szTemp);
     }
   }
   if ( GetCharInfo()->PercentEXPtoAA && CheckAAChange() ) {
     gainedxp = true;
     if (!bQuietXP){
-      sprintf_s(szTemp,"AA Gained: %I64d (%02.3f%%) || AA Total: %I64d (%02.3f%%)",TrackXP[AltExperience].Gained,(float)TrackXP[AltExperience].Gained/3.30f,TrackXP[AltExperience].Total,(float)TrackXP[AltExperience].Total/3.30f);
+      sprintf_s(szTemp,"AA Gained: %I64d (%02.3f%%) || AA Total: %I64d (%02.3f%%)",TrackXP[AltExperience].Gained,(float)TrackXP[AltExperience].Gained/XPTotalDivider,TrackXP[AltExperience].Total,(float)TrackXP[AltExperience].Total/XPTotalDivider);
       WriteChatColor(szTemp);
     }
   }
