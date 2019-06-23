@@ -72,10 +72,10 @@ using namespace std;
 
 PreSetup("MQ2XPTracker");
 #if defined(UFEMU) || defined(ROF2EMU)
-__int64 XPTotalPerLevel = 330;
+long XPTotalPerLevel = 330;
 float XPTotalDivider = 3.30f;
 #else
-__int64 XPTotalPerLevel = 100000;
+long XPTotalPerLevel = 100000;
 float XPTotalDivider = 1000.0f;
 #endif
 
@@ -194,8 +194,8 @@ class MQ2XPTrackerType : public MQ2Type
       return (float)TotalXP/RunningTimeFloat;
     }
 
-    FLOAT TotalXP = (float)TrackXP[Experience].Total/XPTotalDivider + (float)TrackXP[AltExperience].Total/XPTotalDivider ;
-    return (float)TotalXP/RunningTimeFloat;
+    FLOAT TotalXP = (float)(TrackXP[Experience].Total + TrackXP[AltExperience].Total)/XPTotalDivider;
+    return (float)TotalXP / RunningTimeFloat;
 
   }
   PCHAR GetRunTime(PCHAR szTemp)
@@ -218,7 +218,7 @@ class MQ2XPTrackerType : public MQ2Type
       switch (_id)
       {
         case 0:
-        Dest.Float=(float)TrackXP[Experience].Total/XPTotalDivider + (float)TrackXP[AltExperience].Total/XPTotalDivider ;
+        Dest.Float=(float)(TrackXP[Experience].Total + TrackXP[AltExperience].Total)/XPTotalDivider;
         break;
         case 1:
         Dest.Float=(float)TrackXP[Experience].Total/XPTotalDivider;
