@@ -30,7 +30,11 @@
 //
 // Changes:
 //  07-03-19
-//		Update to reflect gaining multiple AA's per kill, update to correct the AA Exp formula. Update to fix indentation. 
+//		Update to reflect gaining multiple AA's per kill.
+//		Update to correct the AA Exp formula. 
+//		Update to fix indentation. 
+//		Update to add color to XP and AAXP output after each kill. 
+//		Update to change output format of XP and AAXP for each kill to show the AA earned as a number of actual AAs. 
 //  06-22-19
 //		Updated to follow new XP formula while preserving previous formula for RoF2EMU and UFEMU
 //
@@ -52,8 +56,8 @@
 //
 //  09-19-04
 //     New changelog. Less clutter.  Meh.
-//     Everything's done with the points straight from the client.  1-1000 for xp/aa
-//     and 1-1000 for laa/rlaa.  Percentages are only displayed when needed in output.
+//     Everything's done with the points straight from the client.  1-330 for xp/aa
+//     and 1-330 for laa/rlaa.  Percentages are only displayed when needed in output.
 //     No sense dealing with the issues in storing a float, and the possible rounding
 //     errors etc.
 //////////////////////////////////////////////////////////////////////////////
@@ -73,6 +77,9 @@ using namespace std;
 #include <list>
 
 PreSetup("MQ2XPTracker");
+
+DWORD GetTotalAA();
+
 #if defined(UFEMU) || defined(ROF2EMU)
 	long XPTotalPerLevel = 330;
 	float XPTotalDivider = 3.30f;
@@ -428,10 +435,10 @@ BOOL CheckAAChange()
 	PCHARINFO2 pCharInfo2 = GetCharInfo2();
 	DWORD Current = pCharInfo->AAExp;
 	if (Current!=TrackXP[AltExperience].Base) {
-		TrackXP[AltExperience].Gained = pCharInfo2->AAPoints == PlayerAA ? Current - TrackXP[AltExperience].Base : Current - TrackXP[AltExperience].Base + ((pCharInfo2->AAPoints - PlayerAA) * XPTotalPerLevel);
+		TrackXP[AltExperience].Gained = GetTotalAA() == PlayerAA ? Current - TrackXP[AltExperience].Base : Current - TrackXP[AltExperience].Base + ((GetTotalAA() - PlayerAA) * XPTotalPerLevel);
 		TrackXP[AltExperience].Total +=TrackXP[AltExperience].Gained;
 		TrackXP[AltExperience].Base = Current;
-		PlayerAA = pCharInfo2->AAPoints;
+		PlayerAA = GetTotalAA();
 		return true;
 	}
 	return false;
@@ -444,7 +451,12 @@ VOID SetBaseValues()
 	TrackXP[Experience].Base = pCharInfo->Exp;
 	TrackXP[AltExperience].Base = pCharInfo->AAExp;
 	PlayerLevel = pCharInfo2->Level;
-	PlayerAA = pCharInfo2->AAPoints;
+	PlayerAA = GetTotalAA();
+}
+
+DWORD GetTotalAA()
+{
+	return GetCharInfo2()->AAPoints + GetCharInfo2()->AAPointsSpent;
 }
 
 VOID XPEventsCommand(PSPAWNINFO pChar, PCHAR szLine)
