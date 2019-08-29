@@ -62,7 +62,7 @@
 //     errors etc.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "../MQ2Plugin.h"
+#include "../../MQ2Plugin.h"
 using namespace std;
 //////////////////////////////////////////////////////////////////////////////
 // Change this if the plugin runs too slow or too fast.  It simply specifies
@@ -221,7 +221,7 @@ class MQ2XPTrackerType : public MQ2Type
 
 	bool GetMember(MQ2VARPTR VarPtr, PCHAR Member, PCHAR Index, MQ2TYPEVAR &Dest)
 	{
-		PMQ2TYPEMEMBER pMember=MQ2XPTrackerType::FindMember(Member);
+		auto pMember = MQ2XPTrackerType::FindMember(Member);
 		if (!pMember)
 			return false;
 		switch((XPTrackerMembers)pMember->ID)
@@ -410,7 +410,7 @@ VOID AddElement(__int64 Experience, __int64 AA)
 BOOL CheckExpChange()
 {
 	PCHARINFO pCharInfo = GetCharInfo();
-	PCHARINFO2 pCharInfo2 = GetCharInfo2();
+	CHARINFO2* pCharInfo2 = GetCharInfo2();
 	__int64 Current = pCharInfo->Exp;
 	if (Current!=TrackXP[Experience].Base) {
 		if (LossFromDeath) {
@@ -432,7 +432,7 @@ BOOL CheckExpChange()
 BOOL CheckAAChange()
 {
 	PCHARINFO pCharInfo = GetCharInfo();
-	PCHARINFO2 pCharInfo2 = GetCharInfo2();
+	CHARINFO2* pCharInfo2 = GetCharInfo2();
 	DWORD Current = pCharInfo->AAExp;
 	if (Current!=TrackXP[AltExperience].Base) {
 		TrackXP[AltExperience].Gained = GetTotalAA() == PlayerAA ? Current - TrackXP[AltExperience].Base : Current - TrackXP[AltExperience].Base + ((GetTotalAA() - PlayerAA) * XPTotalPerLevel);
@@ -447,7 +447,7 @@ BOOL CheckAAChange()
 VOID SetBaseValues()
 {
 	PCHARINFO pCharInfo = GetCharInfo();
-	PCHARINFO2 pCharInfo2 = GetCharInfo2();
+	CHARINFO2* pCharInfo2 = GetCharInfo2();
 	TrackXP[Experience].Base = pCharInfo->Exp;
 	TrackXP[AltExperience].Base = pCharInfo->AAExp;
 	PlayerLevel = pCharInfo2->Level;
