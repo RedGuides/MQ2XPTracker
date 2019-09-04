@@ -219,7 +219,7 @@ class MQ2XPTrackerType : public MQ2Type
 		return szTemp;
 	}
 
-	bool GetMember(MQ2VARPTR VarPtr, PCHAR Member, PCHAR Index, MQ2TYPEVAR &Dest)
+	bool GetMember(MQVarPtr VarPtr, PCHAR Member, PCHAR Index, MQTypeVar& Dest)
 	{
 		auto pMember = MQ2XPTrackerType::FindMember(Member);
 		if (!pMember)
@@ -334,7 +334,7 @@ class MQ2XPTrackerType : public MQ2Type
 		return false;
 	}
 
-	bool ToString(MQ2VARPTR VarPtr, PCHAR Destination)
+	bool ToString(MQVarPtr VarPtr, PCHAR Destination)
 	{
 		if (bTrackXP)
 			strcpy_s(Destination,MAX_STRING,"TRUE");
@@ -343,18 +343,18 @@ class MQ2XPTrackerType : public MQ2Type
 		return true;
 	}
 
-	bool FromData(MQ2VARPTR &VarPtr, MQ2TYPEVAR &Source)
+	bool FromData(MQVarPtr& VarPtr, MQTypeVar& Source)
 	{
 		return false;
 	}
 
-	bool FromString(MQ2VARPTR &VarPtr, PCHAR Source)
+	bool FromString(MQVarPtr& VarPtr, PCHAR Source)
 	{
 		return false;
 	}
 };
 
-BOOL dataXPTracker(PCHAR szIndex, MQ2TYPEVAR &Ret)
+bool dataXPTracker(const char* szIndex, MQTypeVar& Ret)
 {
 	int id;
 	if (!szIndex[0])
