@@ -414,7 +414,7 @@ BOOL CheckExpChange()
 	__int64 Current = pCharInfo->Exp;
 	if (Current!=TrackXP[Experience].Base) {
 		if (LossFromDeath) {
-			TrackXP[Experience].Gained = TrackXP[Experience].Base > Current ? TrackXP[Experience].Base - Current : XPTotalPerLevel - Current + TrackXP[Experience].Base;
+			TrackXP[Experience].Gained = pCharInfo2->Level == PlayerLevel ? Current - TrackXP[Experience].Base : Current - TrackXP[Experience].Base + ((PlayerLevel - pCharInfo2->Level) * (long long)XPTotalPerLevel);
 			TrackXP[Experience].Total -= TrackXP[Experience].Gained;
 			LossFromDeath = 0;
 		} else {
