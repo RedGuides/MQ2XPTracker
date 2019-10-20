@@ -29,6 +29,15 @@
 // float    Changes       Total number of changes tracked so far
 //
 // Changes:
+//  10-20-19
+//		Updated to remove LossFromDeath if statement and variables. Modified the formula to account for loss of level. When doing a += value, if the value is negative,
+//			it actually subtracts the result. Allowing us to do the same math for loss from death and gain from kill. However, the formula required tweaking in the event
+//			you lost a level from death.
+//		Updated to add some additional color while I was in here to the /xp command for the averages and time to ding etc output. 
+//		Updated to change variable types to match each other so as to cutback on the multiple types of variables doing math with each other to reduce the chance of issues
+//			in calculations.
+//		Update to fix "/xp reset" not resetting totals. 
+//		Potentially TODO: Update GetTickCount() to use GetTickCount64() as recommended by VS. 
 //  07-03-19
 //		Update to reflect gaining multiple AA's per kill.
 //		Update to correct the AA Exp formula. 
@@ -81,10 +90,10 @@ PreSetup("MQ2XPTracker");
 DWORD GetTotalAA();
 
 #if defined(UFEMU) || defined(ROF2EMU)
-	long XPTotalPerLevel = 330;
+	long long XPTotalPerLevel = 330;
 	float XPTotalDivider = 3.30f;
 #else
-	long XPTotalPerLevel = 100000;
+	long long XPTotalPerLevel = 100000;
 	float XPTotalDivider = 1000.0f;
 #endif
 
@@ -94,9 +103,9 @@ enum XP_TYPES {
 };
 
 struct _expdata {
-	__int64 Base;
-	__int64 Gained;
-	__int64 Total;
+	long long Base;
+	long long Gained;
+	long long Total;
 } TrackXP[4];
 
 typedef struct _timestamp {
@@ -105,16 +114,15 @@ typedef struct _timestamp {
 } TIMESTAMP;
 
 struct _XP_EVENT {
-	__int64   xp;
-	__int64   aa;
-	TIMESTAMP   Timestamp;
+	long long xp;
+	long long aa;
+	TIMESTAMP Timestamp;
 };
 
 bool bTrackXP = false;
 bool bDoInit = false;
 bool bQuietXP = false;
 bool bFirstCall = true;
-bool LossFromDeath = false;
 DWORD PlayerLevel = 0;
 DWORD PlayerAA = 0;
 TIMESTAMP StartTime;
@@ -411,21 +419,14 @@ BOOL CheckExpChange()
 {
 	PCHARINFO pCharInfo = GetCharInfo();
 	PCHARINFO2 pCharInfo2 = GetCharInfo2();
-	__int64 Current = pCharInfo->Exp;
+	long long Current = pCharInfo->Exp;
 	if (Current!=TrackXP[Experience].Base) {
-		if (LossFromDeath) {
-			TrackXP[Experience].Gained = pCharInfo2->Level == PlayerLevel ? Current - TrackXP[Experience].Base : Current - TrackXP[Experience].Base + ((PlayerLevel - pCharInfo2->Level) * (long long)XPTotalPerLevel);
-			TrackXP[Experience].Total -= TrackXP[Experience].Gained;
-			LossFromDeath = 0;
-		} else {
-			TrackXP[Experience].Gained = pCharInfo2->Level == PlayerLevel ? Current - TrackXP[Experience].Base : XPTotalPerLevel - TrackXP[Experience].Base + Current;
-			TrackXP[Experience].Total += TrackXP[Experience].Gained;
-		}
+		TrackXP[Experience].Gained = (pCharInfo2->Level == PlayerLevel ? Current - TrackXP[Experience].Base : (pCharInfo2->Level > PlayerLevel ? XPTotalPerLevel - TrackXP[Experience].Base + Current : TrackXP[Experience].Base - XPTotalPerLevel + Current));
+		TrackXP[Experience].Total += TrackXP[Experience].Gained;
 		TrackXP[Experience].Base = Current;
 		PlayerLevel = pCharInfo2->Level;
 		return true;
 	}
-	TrackXP[Experience].Gained=0;
 	return false;
 }
 
@@ -449,7 +450,9 @@ VOID SetBaseValues()
 	PCHARINFO pCharInfo = GetCharInfo();
 	PCHARINFO2 pCharInfo2 = GetCharInfo2();
 	TrackXP[Experience].Base = pCharInfo->Exp;
+	TrackXP[Experience].Total = 0;
 	TrackXP[AltExperience].Base = pCharInfo->AAExp;
+	TrackXP[AltExperience].Total = 0;
 	PlayerLevel = pCharInfo2->Level;
 	PlayerAA = GetTotalAA();
 }
@@ -568,25 +571,25 @@ VOID XPAverageCommand(PSPAWNINFO pChar, PCHAR szLine)
 	FLOAT perhour;
 	__int64 needed;
 	FLOAT KPH = (float)i/RunningTimeFloat;
-	WriteChatf("Total run time: \ay%d hours %d minutes %d seconds\ax",RunningTimeHours,RunningTimeMinutes,RunningTimeSeconds);
-	WriteChatf("Average \ayxp\ax per kill: \ar%02.3f%%\ax   per-hour \ar%02.1f%%\ax",(float)(xp/XPTotalDivider)/i,(float)(xp/XPTotalDivider)/i*KPH);
-	WriteChatf("Average \ayaa\ax per kill: \ar%02.3f%%\ax   per-hour \ar%02.1f%%\ax",(float)(aa/XPTotalDivider)/i,(float)(aa/XPTotalDivider)/i*KPH);
-	WriteChatf("Average \ay%1.2f\ax kills-per-hour", KPH);
+	WriteChatf("\a-tTotal run time: \ag%d \a-thours \ag%d \a-tminutes \ag%d \a-tseconds\ax",RunningTimeHours,RunningTimeMinutes,RunningTimeSeconds);
+	WriteChatf("\a-tAverage \atEXP \a-tper kill: \ag%02.3f%% \a-tper-hour: \ag%02.1f%%\ax",(float)(xp/XPTotalDivider)/i,(float)(xp/XPTotalDivider)/i*KPH);
+	WriteChatf("\a-tAverage \atAAEXP \a-tper kill: \ag%02.3f%% \a-tper-hour: \ag%02.1f%%\ax",(float)(aa/XPTotalDivider)/i,(float)(aa/XPTotalDivider)/i*KPH);
+	WriteChatf("\a-tAverage \ag%1.2f \a-tkills-per-hour", KPH);
 
 	if (xp)
 	{
-	needed = XPTotalPerLevel-GetCharInfo()->Exp;
-	perkill = xp/i;
-	perhour = perkill*KPH;
-	WriteChatf("Estimated time to \ayxp\ax ding \ar%1.2f\ax hours", (float)needed/perhour);
+		needed = XPTotalPerLevel-GetCharInfo()->Exp;
+		perkill = xp/i;
+		perhour = perkill*KPH;
+		WriteChatf("\ayEstimated time to \atLevel \ag%1.2f \ayhours", (float)needed/perhour);
 	}
 
 	if (aa)
 	{
-	needed = XPTotalPerLevel-GetCharInfo()->AAExp;
-	perkill = aa/i;
-	perhour = perkill*KPH;
-	WriteChatf("Estimated time to \ayaa\ax ding \ar%1.2f\ax hours", (float)needed/perhour);
+		needed = XPTotalPerLevel-GetCharInfo()->AAExp;
+		perkill = aa/i;
+		perhour = perkill*KPH;
+		WriteChatf("\ayEstimated time to \atAA \ayding \ag%1.2f \ayhours", (float)needed/perhour);
 	}
 }
 
@@ -620,8 +623,10 @@ PLUGIN_API VOID ShutdownPlugin(VOID)
 PLUGIN_API void SetGameState(DWORD GameState)
 {
 	DebugSpewAlways("MQ2XPTracker::SetGameState()");
-	if (GameState!=GAMESTATE_INGAME) bTrackXP = false; // don't track while not in game
-	else bDoInit = true;
+	if (GameState!=GAMESTATE_INGAME) 
+		bTrackXP = false; // don't track while not in game
+	else 
+		bDoInit = true;
 }
 
 PLUGIN_API VOID OnDrawHUD(VOID)
@@ -637,17 +642,6 @@ PLUGIN_API VOID OnDrawHUD(VOID)
 		bDoInit = false;
 		bTrackXP = true;
 	}
-}
-
-PLUGIN_API DWORD OnIncomingChat(PCHAR Line, DWORD Color)
-{
-  /* Probably faster to just check the color anyway
-  // Only process events if in-game
-  if (!bTrackXP || MQ2Globals::gGameState != GAMESTATE_INGAME) return 0;
-  */
-  // DebugSpewAlways("MQ2XPTracker::OnIncomingChat(%s)",Line);
-  if(Color == USERCOLOR_YOUR_DEATH) LossFromDeath=1;
-  return 0;
 }
 
 PLUGIN_API VOID OnPulse(VOID)
@@ -677,6 +671,7 @@ PLUGIN_API VOID OnPulse(VOID)
 			#endif
 		}
 	}
-	if (gainedxp) AddElement(TrackXP[Experience].Gained,TrackXP[AltExperience].Gained);
+	if (gainedxp)
+		AddElement(TrackXP[Experience].Gained, TrackXP[AltExperience].Gained);
 	return;
 }
