@@ -410,7 +410,7 @@ VOID AddElement(__int64 Experience, __int64 AA)
 BOOL CheckExpChange()
 {
 	PCHARINFO pCharInfo = GetCharInfo();
-	CHARINFO2* pCharInfo2 = GetCharInfo2();
+	PcProfile* pCharInfo2 = GetPcProfile();
 	__int64 Current = pCharInfo->Exp;
 	if (Current!=TrackXP[Experience].Base) {
 		if (LossFromDeath) {
@@ -432,7 +432,7 @@ BOOL CheckExpChange()
 BOOL CheckAAChange()
 {
 	PCHARINFO pCharInfo = GetCharInfo();
-	CHARINFO2* pCharInfo2 = GetCharInfo2();
+	PcProfile* pCharInfo2 = GetPcProfile();
 	DWORD Current = pCharInfo->AAExp;
 	if (Current!=TrackXP[AltExperience].Base) {
 		TrackXP[AltExperience].Gained = GetTotalAA() == PlayerAA ? Current - TrackXP[AltExperience].Base : Current - TrackXP[AltExperience].Base + ((GetTotalAA() - PlayerAA) * XPTotalPerLevel);
@@ -447,7 +447,7 @@ BOOL CheckAAChange()
 VOID SetBaseValues()
 {
 	PCHARINFO pCharInfo = GetCharInfo();
-	CHARINFO2* pCharInfo2 = GetCharInfo2();
+	PcProfile* pCharInfo2 = GetPcProfile();
 	TrackXP[Experience].Base = pCharInfo->Exp;
 	TrackXP[AltExperience].Base = pCharInfo->AAExp;
 	PlayerLevel = pCharInfo2->Level;
@@ -456,7 +456,7 @@ VOID SetBaseValues()
 
 DWORD GetTotalAA()
 {
-	return GetCharInfo2()->AAPoints + GetCharInfo2()->AAPointsSpent;
+	return GetPcProfile()->AAPoints + GetPcProfile()->AAPointsSpent;
 }
 
 VOID XPEventsCommand(PSPAWNINFO pChar, PCHAR szLine)
@@ -656,7 +656,7 @@ PLUGIN_API VOID OnPulse(VOID)
 	bool gainedxp;
 	char szTemp[MAX_STRING];
 
-	if ((!bTrackXP || MQ2Globals::gGameState != GAMESTATE_INGAME) || ++N<=SKIP_PULSES) return;
+	if ((!bTrackXP || gGameState != GAMESTATE_INGAME) || ++N<=SKIP_PULSES) return;
 	N=0;
 	gainedxp=false;
 	if (CheckExpChange()) {
