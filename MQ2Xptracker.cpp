@@ -250,7 +250,7 @@ class MQ2XPTrackerType : public MQ2Type
 					default:
 						return false;
 				}
-				Dest.Type=pFloatType;
+				Dest.Type=mq::datatypes::pFloatType;
 				return true;
 			case Average:
 				GetAverages();
@@ -267,7 +267,7 @@ class MQ2XPTrackerType : public MQ2Type
 					default:
 						return false;
 				}
-				Dest.Type=pFloatType;
+				Dest.Type=mq::datatypes::pFloatType;
 				return true;
 			case AveragePct:
 				GetAverages();
@@ -282,7 +282,7 @@ class MQ2XPTrackerType : public MQ2Type
 					default:
 						return false;
 				}
-				Dest.Type=pFloatType;
+				Dest.Type=mq::datatypes::pFloatType;
 				return true;
 			case TimeToDing:
 				__int64  needed;
@@ -300,27 +300,27 @@ class MQ2XPTrackerType : public MQ2Type
 					default:
 						return false;
 				}
-				Dest.Type=pFloatType;
+				Dest.Type=mq::datatypes::pFloatType;
 				return true;
 			case KillsPerHour:
 				if (_id) return false;
 				Dest.Float=GetKPH();
-				Dest.Type=pFloatType;
+				Dest.Type=mq::datatypes::pFloatType;
 				return true;
 			case Changes:
 				if (_id) return false;
 				Dest.Int=Events.size();
-				Dest.Type=pIntType;
+				Dest.Type=mq::datatypes::pIntType;
 				return true;
 			case RunTime:
 				if (_id) return false;
 				Dest.Ptr=GetRunTime(DataTypeTemp);
-				Dest.Type=pStringType;
+				Dest.Type=mq::datatypes::pStringType;
 				return true;
 			case RunTimeHours:
 				if (_id) return false;
 				Dest.Float=(float)((GetTickCount64() - StartTime.systicks)/HOUR);
-				Dest.Type=pFloatType;
+				Dest.Type=mq::datatypes::pFloatType;
 				return true;
 			case PctExpPerHour:
 				switch (_id)
@@ -337,7 +337,7 @@ class MQ2XPTrackerType : public MQ2Type
 					default:
 						return false;
 				}
-				Dest.Type=pFloatType;
+				Dest.Type=mq::datatypes::pFloatType;
 				return true;
 		}
 		return false;
