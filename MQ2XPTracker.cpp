@@ -90,10 +90,10 @@ PreSetup("MQ2XPTracker");
 DWORD GetTotalAA();
 
 #if defined(UFEMU) || defined(ROF2EMU)
-	long long XPTotalPerLevel = 330;
+	int64_t XPTotalPerLevel = 330;
 	float XPTotalDivider = 3.30f;
 #else
-	long long XPTotalPerLevel = 100000;
+	int64_t XPTotalPerLevel = 100000;
 	float XPTotalDivider = 1000.0f;
 #endif
 
@@ -103,19 +103,19 @@ enum XP_TYPES {
 };
 
 struct _expdata {
-	long long Base;
-	long long Gained;
-	long long Total;
+	int64_t Base;
+	int64_t Gained;
+	int64_t Total;
 } TrackXP[4];
 
 typedef struct _timestamp {
 	SYSTEMTIME systime;
-	long long  systicks;
+	int64_t  systicks;
 } TIMESTAMP;
 
 struct _XP_EVENT {
-	long long   xp;
-	long long   aa;
+	int64_t   xp;
+	int64_t   aa;
 	TIMESTAMP   Timestamp;
 };
 
@@ -136,8 +136,8 @@ class MQ2XPTrackerType : public MQ2Type
 	private:
 		int _id = 0;
 		struct {
-			long long xp = 0;
-			long long aa = 0;
+			int64_t xp = 0;
+			int64_t aa = 0;
 		} Averages;
 	public:
 	enum XPTrackerMembers
@@ -192,14 +192,14 @@ class MQ2XPTrackerType : public MQ2Type
 	float GetKPH()
 	{
 		int Kills = Events.size();
-		unsigned long long RunningTime = GetTickCount64() - StartTime.systicks;
+		uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
 		float RunningTimeFloat = (float)RunningTime/HOUR;
 		return Events.empty()?0:Kills/RunningTimeFloat;
 	}
 
 	FLOAT GetEPH(PCHAR Type)
 	{
-		unsigned long long RunningTime = GetTickCount64() - StartTime.systicks;
+		uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
 		float RunningTimeFloat = (float)RunningTime/HOUR;
 
 		if(!strcmp(Type,"Experience"))
@@ -220,10 +220,10 @@ class MQ2XPTrackerType : public MQ2Type
 
 	PCHAR GetRunTime(PCHAR szTemp)
 	{
-		unsigned long long RunningTime = GetTickCount64() - StartTime.systicks;
-		unsigned long long RunningTimeHours = RunningTime/HOUR;
-		unsigned long long RunningTimeMinutes = (RunningTime-(RunningTimeHours*HOUR))/MINUTE;
-		unsigned long long RunningTimeSeconds = (RunningTime-(RunningTimeHours*HOUR+RunningTimeMinutes*MINUTE))/SECOND;
+		uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
+		uint64_t RunningTimeHours = RunningTime/HOUR;
+		uint64_t RunningTimeMinutes = (RunningTime-(RunningTimeHours*HOUR))/MINUTE;
+		uint64_t RunningTimeSeconds = (RunningTime-(RunningTimeHours*HOUR+RunningTimeMinutes*MINUTE))/SECOND;
 		sprintf_s(szTemp,MAX_STRING,"%02lld:%02lld:%02lld",RunningTimeHours,RunningTimeMinutes,RunningTimeSeconds);
 		return szTemp;
 	}
@@ -285,7 +285,7 @@ class MQ2XPTrackerType : public MQ2Type
 				Dest.Type=mq::datatypes::pFloatType;
 				return true;
 			case TimeToDing:
-				__int64  needed;
+				int64_t  needed;
 				GetAverages();
 				switch (_id)
 				{
@@ -389,7 +389,7 @@ bool dataXPTracker(const char* szIndex, MQTypeVar& Ret)
 	return true;
 }
 
-VOID AddElement(__int64 Experience, __int64 AA)
+VOID AddElement(int64_t Experience, int64_t AA)
 {
 	_XP_EVENT event;
 	event.xp=Experience;
@@ -420,7 +420,7 @@ BOOL CheckExpChange()
 {
 	PCHARINFO pCharInfo = GetCharInfo();
 	PcProfile* pCharInfo2 = GetPcProfile();
-	long long Current = pCharInfo->Exp;
+	int64_t Current = pCharInfo->Exp;
 	if (Current!=TrackXP[Experience].Base) {
 		TrackXP[Experience].Gained = (pCharInfo2->Level == PlayerLevel ? Current - TrackXP[Experience].Base : (pCharInfo2->Level > PlayerLevel ? XPTotalPerLevel - TrackXP[Experience].Base + Current : TrackXP[Experience].Base - XPTotalPerLevel + Current));
 		TrackXP[Experience].Total += TrackXP[Experience].Gained;
@@ -467,7 +467,7 @@ DWORD GetTotalAA()
 VOID XPEventsCommand(PSPAWNINFO pChar, PCHAR szLine)
 {
 	char szTemp[MAX_STRING];
-	long long TargetTick;
+	int64_t TargetTick;
 	GetArg(szTemp,szLine,1);
 	if (!strlen(szTemp)) TargetTick=GetTickCount64()-HOUR;
 	else {
@@ -570,15 +570,15 @@ VOID XPAverageCommand(PSPAWNINFO pChar, PCHAR szLine)
 		i++;
 		pEvents++;
 	}
-	long long RunningTime = GetTickCount64() - StartTime.systicks;
-	long long RunningTimeHours = RunningTime/HOUR;
-	long long RunningTimeMinutes = (RunningTime-(RunningTimeHours*HOUR))/MINUTE;
-	long long RunningTimeSeconds = (RunningTime-(RunningTimeHours*HOUR+RunningTimeMinutes*MINUTE))/SECOND;
-	FLOAT RunningTimeFloat = (float)RunningTime/HOUR;
-	FLOAT perkill;
-	FLOAT perhour;
-	__int64 needed;
-	FLOAT KPH = (float)i/RunningTimeFloat;
+	int64_t RunningTime = GetTickCount64() - StartTime.systicks;
+	int64_t RunningTimeHours = RunningTime/HOUR;
+	int64_t RunningTimeMinutes = (RunningTime-(RunningTimeHours*HOUR))/MINUTE;
+	int64_t RunningTimeSeconds = (RunningTime-(RunningTimeHours*HOUR+RunningTimeMinutes*MINUTE))/SECOND;
+	float RunningTimeFloat = (float)RunningTime/HOUR;
+	float perkill;
+	float perhour;
+	int64_t needed;
+	float KPH = (float)i/RunningTimeFloat;
 	WriteChatf("\a-tTotal run time: \ag%d \a-thours \ag%d \a-tminutes \ag%d \a-tseconds\ax",RunningTimeHours,RunningTimeMinutes,RunningTimeSeconds);
 	WriteChatf("\a-tAverage \atEXP \a-tper kill: \ag%02.3f%% \a-tper-hour: \ag%02.1f%%\ax",(float)(xp/XPTotalDivider)/i,(float)(xp/XPTotalDivider)/i*KPH);
 	WriteChatf("\a-tAverage \atAAEXP \a-tper kill: \ag%02.3f%% \a-tper-hour: \ag%02.1f%%\ax",(float)(aa/XPTotalDivider)/i,(float)(aa/XPTotalDivider)/i*KPH);
