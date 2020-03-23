@@ -1,7 +1,5 @@
 // MQ2XPTracker.cpp : A (hopefully) simple XP tracker (by Cr4zyb4rd)
 //
-// Version 2.1
-//
 // Loosely based on XPTracker.mac by Kambic
 //
 // Usage: /xptracker       - Display time tracking was started.
@@ -86,6 +84,7 @@ constexpr auto DAY = (24 * HOUR);
 #include <list>
 
 PreSetup("MQ2XPTracker");
+PLUGIN_VERSION(2.1);
 
 DWORD GetTotalAA();
 
