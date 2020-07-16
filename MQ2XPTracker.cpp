@@ -227,7 +227,7 @@ class MQ2XPTrackerType : public MQ2Type
 		return szTemp;
 	}
 
-	bool GetMember(MQVarPtr VarPtr, PCHAR Member, PCHAR Index, MQTypeVar& Dest)
+	virtual bool GetMember(MQVarPtr VarPtr, const char* Member, char* Index, MQTypeVar& Dest) override
 	{
 		auto pMember = MQ2XPTrackerType::FindMember(Member);
 		if (!pMember)
@@ -356,7 +356,7 @@ class MQ2XPTrackerType : public MQ2Type
 		return false;
 	}
 
-	bool FromString(MQVarPtr& VarPtr, PCHAR Source)
+	virtual bool FromString(MQVarPtr& VarPtr, const char* Source) override
 	{
 		return false;
 	}
