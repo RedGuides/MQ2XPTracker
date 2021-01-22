@@ -122,7 +122,7 @@ bool bTrackXP = false;
 bool bDoInit = false;
 bool bQuietXP = false;
 bool bFirstCall = true;
-DWORD PlayerLevel = 0;
+int PlayerLevel = 0;
 DWORD PlayerAA = 0;
 TIMESTAMP StartTime;
 std::list<_XP_EVENT> Events;
