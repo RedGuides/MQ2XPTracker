@@ -128,103 +128,103 @@ TIMESTAMP StartTime;
 std::list<_XP_EVENT> Events;
 std::list<_XP_EVENT>::iterator pEvents;
 
-class MQ2XPTrackerType *pXPTrackerType=0;
+struct AverageInfo {
+	float xp = 0.f;
+	float aa = 0.f;
+};
+
+AverageInfo GetAverages()
+{
+	if (Events.empty()) return AverageInfo{};
+	int64_t xp = 0;
+	int64_t aa = 0;
+	pEvents = Events.begin();
+	int i = 0;
+	while (pEvents != Events.end()) {
+		xp += pEvents->xp;
+		aa += pEvents->aa;
+		++i;
+		++pEvents;
+	}
+
+	AverageInfo Averages;
+	Averages.xp = static_cast<float>(xp) / i;
+	Averages.aa = static_cast<float>(aa) / i;
+	return Averages;
+}
+
+float GetKPH()
+{
+	int Kills = Events.size();
+	uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
+	float RunningTimeFloat = (float)RunningTime / HOUR;
+	return Events.empty() ? 0 : Kills / RunningTimeFloat;
+}
+
+enum class XPTrackerID {
+	Total = 0,
+	XP = 1,
+	AA = 2,
+};
+
+float GetEPH(XPTrackerID Type)
+{
+	uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
+	float RunningTimeFloat = (float)RunningTime / HOUR;
+
+	if (Type == XPTrackerID::XP)
+	{
+		float TotalXP = (float)TrackXP[Experience].Total / XPTotalDivider;
+		return TotalXP / RunningTimeFloat;
+	}
+
+	if (Type == XPTrackerID::AA)
+	{
+		float TotalXP = (float)TrackXP[AltExperience].Total / XPTotalDivider;
+		return TotalXP / RunningTimeFloat;
+	}
+
+	float TotalXP = (float)TrackXP[Experience].Total / XPTotalDivider + (float)TrackXP[AltExperience].Total / XPTotalDivider;
+	return TotalXP / RunningTimeFloat;
+}
+
+char* GetRunTime(char* szTemp)
+{
+	uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
+	uint64_t RunningTimeHours = RunningTime / HOUR;
+	uint64_t RunningTimeMinutes = (RunningTime - (RunningTimeHours * HOUR)) / MINUTE;
+	uint64_t RunningTimeSeconds = (RunningTime - (RunningTimeHours * HOUR + RunningTimeMinutes * MINUTE)) / SECOND;
+	sprintf_s(szTemp, MAX_STRING, "%02lld:%02lld:%02lld", RunningTimeHours, RunningTimeMinutes, RunningTimeSeconds);
+	return szTemp;
+}
 
 class MQ2XPTrackerType : public MQ2Type
 {
-	private:
-		int _id = 0;
-		struct {
-			int64_t xp = 0;
-			int64_t aa = 0;
-		} Averages;
-	public:
-	enum XPTrackerMembers
+public:
+	enum class XPTrackerMembers
 	{
-		Total=1,
-		Average=2,
-		AveragePct=3,
-		TimeToDing=4,
-		KillsPerHour=5,
-		Changes=6,
-		RunTime=7,
-		RunTimeHours=8,
-		PctExpPerHour=9,
+		Total = 1,
+		Average,
+		AveragePct,
+		TimeToDing,
+		KillsPerHour,
+		Changes,
+		RunTime,
+		RunTimeHours,
+		PctExpPerHour,
 	};
 
-	MQ2XPTrackerType():MQ2Type("xptracker")
+	MQ2XPTrackerType() : MQ2Type("xptracker")
 	{
-		TypeMember(Total);
-		TypeMember(Average);
-		TypeMember(AveragePct);
-		TypeMember(TimeToDing);
-		TypeMember(KillsPerHour);
-		TypeMember(Changes);
-		TypeMember(RunTime);
-		TypeMember(RunTimeHours);
-		TypeMember(PctExpPerHour);
-	}
-
-	~MQ2XPTrackerType()	= default;
-
-		void SetIndex(int id)
-	{
-		_id = id;
-	}
-	void GetAverages()
-	{
-		Averages.xp = 0;
-		Averages.aa = 0;
-		if (Events.empty()) return;
-		pEvents = Events.begin();
-		int i=0;
-		while (pEvents!=Events.end()) {
-			Averages.xp+=pEvents->xp;
-			Averages.aa+=pEvents->aa;
-			++i;
-			++pEvents;
-		}
-		Averages.xp=Averages.xp/i;
-		Averages.aa=Averages.aa/i;
-	}
-
-	float GetKPH()
-	{
-		int Kills = Events.size();
-		uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
-		float RunningTimeFloat = (float)RunningTime/HOUR;
-		return Events.empty()?0:Kills/RunningTimeFloat;
-	}
-
-	FLOAT GetEPH(PCHAR Type)
-	{
-		uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
-		float RunningTimeFloat = (float)RunningTime/HOUR;
-
-		if(!strcmp(Type,"Experience"))
-		{
-			FLOAT TotalXP = (float)TrackXP[Experience].Total/XPTotalDivider;
-			return (float)TotalXP/RunningTimeFloat;
-		}
-		else if(!strcmp(Type,"AltExperience"))
-		{
-			FLOAT TotalXP = (float)TrackXP[AltExperience].Total/XPTotalDivider;
-			return (float)TotalXP/RunningTimeFloat;
-		}
-
-		FLOAT TotalXP = (float)TrackXP[Experience].Total/XPTotalDivider + (float)TrackXP[AltExperience].Total/XPTotalDivider ;
-		return (float)TotalXP/RunningTimeFloat;
-
-	}
-
-	PCHAR GetRunTime(PCHAR szTemp)
-	{
-		uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
-		uint64_t RunningTimeHours = RunningTime/HOUR;
-		uint64_t RunningTimeMinutes = (RunningTime-(RunningTimeHours*HOUR))/MINUTE;
-		uint64_t RunningTimeSeconds = (RunningTime-(RunningTimeHours*HOUR+RunningTimeMinutes*MINUTE))/SECOND;
-		sprintf_s(szTemp,MAX_STRING,"%02lld:%02lld:%02lld",RunningTimeHours,RunningTimeMinutes,RunningTimeSeconds);
-		return szTemp;
+		ScopedTypeMember(XPTrackerMembers, Total);
+		ScopedTypeMember(XPTrackerMembers, Average);
+		ScopedTypeMember(XPTrackerMembers, AveragePct);
+		ScopedTypeMember(XPTrackerMembers, TimeToDing);
+		ScopedTypeMember(XPTrackerMembers, KillsPerHour);
+		ScopedTypeMember(XPTrackerMembers, Changes);
+		ScopedTypeMember(XPTrackerMembers, RunTime);
+		ScopedTypeMember(XPTrackerMembers, RunTimeHours);
+		ScopedTypeMember(XPTrackerMembers, PctExpPerHour);
 	}
 
 	virtual bool GetMember(MQVarPtr VarPtr, const char* Member, char* Index, MQTypeVar& Dest) override
@@ -232,159 +232,155 @@ class MQ2XPTrackerType : public MQ2Type
 		auto pMember = MQ2XPTrackerType::FindMember(Member);
 		if (!pMember)
 			return false;
-		switch((XPTrackerMembers)pMember->ID)
+
+		XPTrackerID id = static_cast<XPTrackerID>(VarPtr.DWord);
+		switch (static_cast<XPTrackerMembers>(pMember->ID))
 		{
-			case Total:
-				switch (_id)
-				{
-					case 0:
-						Dest.Float=(float)TrackXP[Experience].Total/XPTotalDivider + (float)TrackXP[AltExperience].Total/XPTotalDivider ;
-						break;
-					case 1:
-						Dest.Float=(float)TrackXP[Experience].Total/XPTotalDivider;
-						break;
-					case 2:
-						Dest.Float=(float)TrackXP[AltExperience].Total/XPTotalDivider;
-						break;
-					default:
-						return false;
-				}
-				Dest.Type=mq::datatypes::pFloatType;
-				return true;
-			case Average:
-				GetAverages();
-				switch (_id)
-				{
-					case 0:
-						return false;
-					case 1:
-						Dest.Float=static_cast<float>(Averages.xp);
-						break;
-					case 2:
-						Dest.Float=static_cast<float>(Averages.aa);
-						break;
-					default:
-						return false;
-				}
-				Dest.Type=mq::datatypes::pFloatType;
-				return true;
-			case AveragePct:
-				GetAverages();
-				switch (_id)
-				{
-					case 1:
-						Dest.Float=static_cast<float>(Averages.xp)/XPTotalDivider;
-						break;
-					case 2:
-						Dest.Float=static_cast<float>(Averages.aa)/XPTotalDivider;
-						break;
-					default:
-						return false;
-				}
-				Dest.Type=mq::datatypes::pFloatType;
-				return true;
-			case TimeToDing:
-				int64_t  needed;
-				GetAverages();
-				switch (_id)
-				{
-					case 1:
-						needed = XPTotalPerLevel-GetCharInfo()->Exp;
-						Dest.Float=(float)needed/(static_cast<float>(Averages.xp)*GetKPH());
-						break;
-					case 2:
-						needed = XPTotalPerLevel-GetCharInfo()->AAExp;
-						Dest.Float=(float)needed/(static_cast<float>(Averages.aa)*GetKPH());
-						break;
-					default:
-						return false;
-				}
-				Dest.Type=mq::datatypes::pFloatType;
-				return true;
-			case KillsPerHour:
-				if (_id) return false;
-				Dest.Float=GetKPH();
-				Dest.Type=mq::datatypes::pFloatType;
-				return true;
-			case Changes:
-				if (_id) return false;
-				Dest.Int=Events.size();
-				Dest.Type=mq::datatypes::pIntType;
-				return true;
-			case RunTime:
-				if (_id) return false;
-				Dest.Ptr=GetRunTime(DataTypeTemp);
-				Dest.Type=mq::datatypes::pStringType;
-				return true;
-			case RunTimeHours:
-				if (_id) return false;
-				Dest.Float=(float)((GetTickCount64() - StartTime.systicks)/HOUR);
-				Dest.Type=mq::datatypes::pFloatType;
-				return true;
-			case PctExpPerHour:
-				switch (_id)
-				{
-					case 0:
-						Dest.Float=GetEPH("Overall");
-						break;
-					case 1:
-						Dest.Float=GetEPH("Experience");
-						break;
-					case 2:
-						Dest.Float=GetEPH("AltExperience");
-						break;
-					default:
-						return false;
-				}
-				Dest.Type=mq::datatypes::pFloatType;
-				return true;
+		case XPTrackerMembers::Total:
+			switch (id)
+			{
+			case XPTrackerID::Total:
+				Dest.Float = (float)TrackXP[Experience].Total / XPTotalDivider + (float)TrackXP[AltExperience].Total / XPTotalDivider;
+				break;
+			case XPTrackerID::XP:
+				Dest.Float = (float)TrackXP[Experience].Total / XPTotalDivider;
+				break;
+			case XPTrackerID::AA:
+				Dest.Float = (float)TrackXP[AltExperience].Total / XPTotalDivider;
+				break;
+			default:
+				return false;
+			}
+			Dest.Type = mq::datatypes::pFloatType;
+			return true;
+
+		case XPTrackerMembers::Average: {
+			if (id == XPTrackerID::Total)
+				return false;
+
+			switch (id)
+			{
+			case XPTrackerID::XP:
+				Dest.Float = GetAverages().xp;
+				break;
+			case XPTrackerID::AA:
+				Dest.Float = GetAverages().aa;
+				break;
+			default:
+				return false;
+			}
+			Dest.Type = mq::datatypes::pFloatType;
+			return true;
+		}
+
+		case XPTrackerMembers::AveragePct:
+			switch (id)
+			{
+			case XPTrackerID::XP:
+				Dest.Float = GetAverages().xp / XPTotalDivider;
+				break;
+			case XPTrackerID::AA:
+				Dest.Float = GetAverages().aa / XPTotalDivider;
+				break;
+			default:
+				return false;
+			}
+			Dest.Type = mq::datatypes::pFloatType;
+			return true;
+
+		case XPTrackerMembers::TimeToDing:
+			if (!pCharData) return false;
+			switch (id)
+			{
+			case XPTrackerID::XP:
+				Dest.Float = static_cast<float>(XPTotalPerLevel - pCharData->Exp) / (GetAverages().xp * GetKPH());
+				break;
+			case XPTrackerID::AA:
+				Dest.Float = static_cast<float>(XPTotalPerLevel - pCharData->AAExp) / (GetAverages().aa * GetKPH());
+				break;
+			default:
+				return false;
+			}
+			Dest.Type = mq::datatypes::pFloatType;
+			return true;
+
+		case XPTrackerMembers::KillsPerHour:
+			if (id != XPTrackerID::Total) return false;
+			Dest.Float = GetKPH();
+			Dest.Type = mq::datatypes::pFloatType;
+			return true;
+
+		case XPTrackerMembers::Changes:
+			if (id != XPTrackerID::Total) return false;
+			Dest.Int = Events.size();
+			Dest.Type = mq::datatypes::pIntType;
+			return true;
+
+		case XPTrackerMembers::RunTime:
+			if (id != XPTrackerID::Total) return false;
+			Dest.Ptr = GetRunTime(DataTypeTemp);
+			Dest.Type = mq::datatypes::pStringType;
+			return true;
+
+		case XPTrackerMembers::RunTimeHours:
+			if (id != XPTrackerID::Total) return false;
+			Dest.Float = ((float)(GetTickCount64() - StartTime.systicks) / HOUR);
+			Dest.Type = mq::datatypes::pFloatType;
+			return true;
+
+		case XPTrackerMembers::PctExpPerHour:
+			Dest.Float = GetEPH(id);
+			Dest.Type = mq::datatypes::pFloatType;
+			return true;
 		}
 		return false;
 	}
 
-	bool ToString(MQVarPtr VarPtr, PCHAR Destination)
+	bool ToString(MQVarPtr VarPtr, char* Destination) override
 	{
 		if (bTrackXP)
-			strcpy_s(Destination,MAX_STRING,"TRUE");
+			strcpy_s(Destination, MAX_STRING, "TRUE");
 		else
-			strcpy_s(Destination,MAX_STRING,"FALSE");
+			strcpy_s(Destination, MAX_STRING, "FALSE");
+
 		return true;
 	}
-
-	bool FromData(MQVarPtr& VarPtr, MQTypeVar& Source)
-	{
-		return false;
-	}
-
-	virtual bool FromString(MQVarPtr& VarPtr, const char* Source) override
-	{
-		return false;
-	}
 };
+MQ2XPTrackerType* pXPTrackerType =  nullptr;
+
 
 bool dataXPTracker(const char* szIndex, MQTypeVar& Ret)
 {
-	int id;
-	if (!szIndex[0])
+	XPTrackerID id = XPTrackerID::Total;
+
+	if (szIndex[0])
 	{
-		id = 0;
+		if (IsNumber(szIndex))
+		{
+			id = static_cast<XPTrackerID>(atoi(szIndex));
+			if (id != XPTrackerID::Total
+				&& id != XPTrackerID::XP
+				&& id != XPTrackerID::AA)
+			{
+				return false;
+			}
+		}
+		else if (!_stricmp(szIndex, "xp"))
+		{
+			id = XPTrackerID::XP;
+		}
+		else if (!_stricmp(szIndex, "aa"))
+		{
+			id = XPTrackerID::AA;
+		}
+		else
+		{
+			return false;
+		}
 	}
-	else if (IsNumber(szIndex))
-	{
-		id = atoi(szIndex);
-	}
-	else if (!_stricmp(szIndex,"xp"))
-	{
-		id = 1;
-	}
-	else if (!_stricmp(szIndex,"aa"))
-	{
-		id = 2;
-	}
-	else return false;
-	pXPTrackerType->SetIndex(id);
-	Ret.DWord=1;
-	Ret.Type=pXPTrackerType;
+
+	Ret.DWord = static_cast<uint32_t>(id);
+	Ret.Type = pXPTrackerType;
 	return true;
 }
 
@@ -475,7 +471,7 @@ VOID XPEventsCommand(PSPAWNINFO pChar, PCHAR szLine)
 			{
 				TargetTick=GetTickCount64()-HOUR;
 			}
-			else 
+			else
 			{
 				WriteChatColor("/xpevents requires a numeric argument in seconds",CONCOLOR_RED);
 				return;
