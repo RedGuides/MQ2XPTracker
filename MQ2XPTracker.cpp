@@ -517,7 +517,12 @@ VOID XPTrackerCommand(PSPAWNINFO pChar, PCHAR szLine)
 {
 	char szTemp[MAX_STRING];
 	GetArg(szTemp,szLine,1);
-	if (!_strnicmp(szTemp,"reset",5)) {
+	if (!_strnicmp(szTemp, "resetonzone", 12)) {
+		bResetOnZone = !bResetOnZone;
+		WritePrivateProfileString("General", "ResetOnZone", (bResetOnZone ? "true" : "false"), szININame.c_str());
+		WriteChatf("MQ2XPTracker::Reset XP Tracking when zoning is now %s", (bResetOnZone ? "true" : "false"));
+		return;
+	} else if (!_strnicmp(szTemp,"reset",5)) {
 		bDoInit=true;
 		bFirstCall=true;
 		WriteChatColor("MQ2XPTracker::XP tracking reset.");
@@ -529,12 +534,6 @@ VOID XPTrackerCommand(PSPAWNINFO pChar, PCHAR szLine)
 		bQuietXP = !bQuietXP;
 		WriteChatf("MQ2XPTracker::Quiet mode %s", (bQuietXP ? "\agTrue" : "\arFalse"));
 		WritePrivateProfileString("General", "Quiet", (bQuietXP ? "true" : "false"), szININame);
-		return;
-	}
-	else if (!_strnicmp(szTemp, "resetonzone", 12)) {
-		bResetOnZone = !bResetOnZone;
-		WritePrivateProfileString("General", "ResetOnZone", (bResetOnZone ? "true" : "false"), szININame.c_str());
-		WriteChatf("MQ2XPTracker::Reset XP Tracking when zoning is now %s", (bResetOnZone ? "true" : "false"));
 		return;
 	}
 
