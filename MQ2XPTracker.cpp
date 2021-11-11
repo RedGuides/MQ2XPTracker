@@ -102,9 +102,9 @@ enum XP_TYPES {
 };
 
 struct _expdata {
-	int64_t Base;
-	int64_t Gained;
-	int64_t Total;
+	int64_t Base = 0;
+	int64_t Gained = 0;
+	int64_t Total = 0;
 } TrackXP[4];
 
 typedef struct _timestamp {
@@ -128,7 +128,6 @@ DWORD PlayerAA = 0;
 TIMESTAMP StartTime;
 std::list<_XP_EVENT> Events;
 std::list<_XP_EVENT>::iterator pEvents;
-std::string szININame = std::string(gPathConfig) + "\\MQ2XPTracker.ini";
 
 struct AverageInfo {
 	float xp = 0.f;
@@ -519,7 +518,7 @@ VOID XPTrackerCommand(PSPAWNINFO pChar, PCHAR szLine)
 	GetArg(szTemp,szLine,1);
 	if (!_strnicmp(szTemp, "resetonzone", 12)) {
 		bResetOnZone = !bResetOnZone;
-		WritePrivateProfileString("General", "ResetOnZone", (bResetOnZone ? "true" : "false"), szININame.c_str());
+		WritePrivateProfileBool("General", "ResetOnZone", bResetOnZone, INIFileName);
 		WriteChatf("MQ2XPTracker::Reset XP Tracking when zoning is now %s", (bResetOnZone ? "true" : "false"));
 		return;
 	} else if (!_strnicmp(szTemp,"reset",5)) {
@@ -533,7 +532,7 @@ VOID XPTrackerCommand(PSPAWNINFO pChar, PCHAR szLine)
 	} else if (!_strnicmp(szTemp,"quiet",5)) {
 		bQuietXP = !bQuietXP;
 		WriteChatf("MQ2XPTracker::Quiet mode %s", (bQuietXP ? "\agTrue" : "\arFalse"));
-		WritePrivateProfileString("General", "Quiet", (bQuietXP ? "true" : "false"), szININame);
+		WritePrivateProfileBool("General", "Quiet", bQuietXP, INIFileName);
 		return;
 	}
 
@@ -620,12 +619,8 @@ PLUGIN_API VOID InitializePlugin()
 	pXPTrackerType = new MQ2XPTrackerType;
 
 	//Load any stored options. Not character/server specific so can do this in the Init without crashing.
-	char buffer[MAX_STRING] = { 0 };
-	GetPrivateProfileString("General", "ResetOnZone", "true", buffer, MAX_STRING, szININame.c_str());
-	bResetOnZone = (!_stricmp(buffer, "true") ? true : false);
-
-	GetPrivateProfileString("General", "Quiet", "false", buffer, MAX_STRING, szININame.c_str());
-	bQuietXP = (!_stricmp(buffer, "true") ? true : false);
+	bResetOnZone = GetPrivateProfileBool("General", "ResetOnZone", true, INIFileName);
+	bQuietXP = GetPrivateProfileBool("General", "Quiet", false, INIFileName);
 }
 
 // Called once, when the plugin is to shutdown
