@@ -102,9 +102,9 @@ enum XP_TYPES {
 };
 
 struct _expdata {
-	int64_t Base;
-	int64_t Gained;
-	int64_t Total;
+	int64_t Base = 0;
+	int64_t Gained = 0;
+	int64_t Total = 0;
 } TrackXP[4];
 
 typedef struct _timestamp {
@@ -122,6 +122,7 @@ bool bTrackXP = false;
 bool bDoInit = false;
 bool bQuietXP = false;
 bool bFirstCall = true;
+bool bResetOnZone = true;
 int PlayerLevel = 0;
 DWORD PlayerAA = 0;
 TIMESTAMP StartTime;
@@ -447,9 +448,13 @@ VOID SetBaseValues()
 	PCHARINFO pCharInfo = GetCharInfo();
 	PcProfile* pCharInfo2 = GetPcProfile();
 	TrackXP[Experience].Base = pCharInfo->Exp;
-	TrackXP[Experience].Total = 0;
 	TrackXP[AltExperience].Base = pCharInfo->AAExp;
-	TrackXP[AltExperience].Total = 0;
+
+	if (bResetOnZone) {
+		TrackXP[Experience].Total = 0;
+		TrackXP[AltExperience].Total = 0;
+	}
+
 	PlayerLevel = pCharInfo2->Level;
 	PlayerAA = GetTotalAA();
 }
@@ -511,7 +516,12 @@ VOID XPTrackerCommand(PSPAWNINFO pChar, PCHAR szLine)
 {
 	char szTemp[MAX_STRING];
 	GetArg(szTemp,szLine,1);
-	if (!_strnicmp(szTemp,"reset",5)) {
+	if (!_strnicmp(szTemp, "resetonzone", 12)) {
+		bResetOnZone = !bResetOnZone;
+		WritePrivateProfileBool("General", "ResetOnZone", bResetOnZone, INIFileName);
+		WriteChatf("MQ2XPTracker::Reset XP Tracking when zoning is now %s", (bResetOnZone ? "true" : "false"));
+		return;
+	} else if (!_strnicmp(szTemp,"reset",5)) {
 		bDoInit=true;
 		bFirstCall=true;
 		WriteChatColor("MQ2XPTracker::XP tracking reset.");
@@ -521,9 +531,8 @@ VOID XPTrackerCommand(PSPAWNINFO pChar, PCHAR szLine)
 		return;
 	} else if (!_strnicmp(szTemp,"quiet",5)) {
 		bQuietXP = !bQuietXP;
-		if (bQuietXP) {
-			WriteChatColor("MQ2XPTracker::Quiet mode on",USERCOLOR_DEFAULT);
-		} else WriteChatColor("MQ2XPTracker::Quiet mode off",USERCOLOR_DEFAULT);
+		WriteChatf("MQ2XPTracker::Quiet mode %s", (bQuietXP ? "\agTrue" : "\arFalse"));
+		WritePrivateProfileBool("General", "Quiet", bQuietXP, INIFileName);
 		return;
 	}
 
@@ -608,6 +617,10 @@ PLUGIN_API VOID InitializePlugin()
 	AddMQ2Data("XPTracker",dataXPTracker);
 
 	pXPTrackerType = new MQ2XPTrackerType;
+
+	//Load any stored options. Not character/server specific so can do this in the Init without crashing.
+	bResetOnZone = GetPrivateProfileBool("General", "ResetOnZone", true, INIFileName);
+	bQuietXP = GetPrivateProfileBool("General", "Quiet", false, INIFileName);
 }
 
 // Called once, when the plugin is to shutdown
@@ -638,7 +651,7 @@ PLUGIN_API void SetGameState(DWORD GameState)
 
 PLUGIN_API VOID OnDrawHUD()
 {
-	if (bDoInit) {
+	if (bDoInit) {//TODO: This doesn't belong here??
 		SetBaseValues();
 		if (bFirstCall) {
 			Events.clear();
