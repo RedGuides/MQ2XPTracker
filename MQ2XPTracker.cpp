@@ -498,7 +498,7 @@ VOID XPEventsCommand(PSPAWNINFO pChar, PCHAR szLine)
 	while (pEvents!=Events.end()) {
 		if (pEvents->Timestamp.systicks>TargetTick) {
 			sprintf_s(szTemp,"%02d:%02d:%02d",pEvents->Timestamp.systime.wHour,pEvents->Timestamp.systime.wMinute,pEvents->Timestamp.systime.wSecond);
-			WriteChatf("%03d - %02.2f%%XP %02.2f%%AA %02.2f%% at %s (%d system ticks):",
+			WriteChatf("%03d - %02.2f%%XP %02.2f%%AA %02.2f%% at %s (%lld system ticks):",
 			i,
 			(float)pEvents->xp/XPTotalDivider,
 			(float)pEvents->aa/XPTotalDivider,
@@ -547,7 +547,7 @@ VOID XPTrackerCommand(PSPAWNINFO pChar, PCHAR szLine)
 		bDoInit = false;
 		bTrackXP = true;
 	}
-	WriteChatf("MQ2XPTracker::XP tracking started at %02d:%02d:%02d (%d system ticks)",StartTime.systime.wHour,StartTime.systime.wMinute,StartTime.systime.wSecond,StartTime.systicks);
+	WriteChatf("MQ2XPTracker::XP tracking started at %02d:%02d:%02d (%lld system ticks)",StartTime.systime.wHour,StartTime.systime.wMinute,StartTime.systime.wSecond,StartTime.systicks);
 }
 
 VOID XPAverageCommand(PSPAWNINFO pChar, PCHAR szLine)
@@ -583,7 +583,7 @@ VOID XPAverageCommand(PSPAWNINFO pChar, PCHAR szLine)
 	float perhour;
 	int64_t needed;
 	float KPH = (float)i/RunningTimeFloat;
-	WriteChatf("\a-tTotal run time: \ag%d \a-thours \ag%d \a-tminutes \ag%d \a-tseconds\ax",RunningTimeHours,RunningTimeMinutes,RunningTimeSeconds);
+	WriteChatf("\a-tTotal run time: \ag%lld \a-thours \ag%lld \a-tminutes \ag%lld \a-tseconds\ax", RunningTimeHours, RunningTimeMinutes, RunningTimeSeconds);
 	WriteChatf("\a-tAverage \atEXP \a-tper kill: \ag%02.3f%% \a-tper-hour: \ag%02.1f%%\ax",(float)(xp/XPTotalDivider)/i,(float)(xp/XPTotalDivider)/i*KPH);
 	WriteChatf("\a-tAverage \atAAEXP \a-tper kill: \ag%02.3f%% \a-tper-hour: \ag%02.1f%%\ax",(float)(aa/XPTotalDivider)/i,(float)(aa/XPTotalDivider)/i*KPH);
 	WriteChatf("\a-tAverage \ag%1.2f \a-tkills-per-hour", KPH);
