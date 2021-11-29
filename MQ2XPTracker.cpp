@@ -450,7 +450,7 @@ VOID SetBaseValues()
 	TrackXP[Experience].Base = pCharInfo->Exp;
 	TrackXP[AltExperience].Base = pCharInfo->AAExp;
 
-	if (bResetOnZone) {
+	if (bResetOnZone || bFirstCall) {
 		TrackXP[Experience].Total = 0;
 		TrackXP[AltExperience].Total = 0;
 	}
