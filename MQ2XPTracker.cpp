@@ -156,7 +156,7 @@ AverageInfo GetAverages()
 
 float GetKPH()
 {
-	int Kills = Events.size();
+	int Kills = (int)Events.size();
 	uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
 	float RunningTimeFloat = (float)RunningTime / HOUR;
 	return Events.empty() ? 0 : Kills / RunningTimeFloat;
@@ -313,7 +313,7 @@ public:
 
 		case XPTrackerMembers::Changes:
 			if (id != XPTrackerID::Total) return false;
-			Dest.Int = Events.size();
+			Dest.Int = (int)Events.size();
 			Dest.Type = mq::datatypes::pIntType;
 			return true;
 
