@@ -189,13 +189,13 @@ float GetEPH(XPTrackerID Type)
 	return TotalXP / RunningTimeFloat;
 }
 
-char* GetRunTime(char* szTemp)
+char* GetRunTime(char* szTemp, size_t bufferSize)
 {
 	uint64_t RunningTime = GetTickCount64() - StartTime.systicks;
 	uint64_t RunningTimeHours = RunningTime / HOUR;
 	uint64_t RunningTimeMinutes = (RunningTime - (RunningTimeHours * HOUR)) / MINUTE;
 	uint64_t RunningTimeSeconds = (RunningTime - (RunningTimeHours * HOUR + RunningTimeMinutes * MINUTE)) / SECOND;
-	sprintf_s(szTemp, MAX_STRING, "%02lld:%02lld:%02lld", RunningTimeHours, RunningTimeMinutes, RunningTimeSeconds);
+	sprintf_s(szTemp, bufferSize, "%02lld:%02lld:%02lld", RunningTimeHours, RunningTimeMinutes, RunningTimeSeconds);
 	return szTemp;
 }
 
@@ -319,7 +319,7 @@ public:
 
 		case XPTrackerMembers::RunTime:
 			if (id != XPTrackerID::Total) return false;
-			Dest.Ptr = GetRunTime(DataTypeTemp);
+			Dest.Ptr = GetRunTime(DataTypeTemp, DataTypeTemp.size());
 			Dest.Type = mq::datatypes::pStringType;
 			return true;
 
