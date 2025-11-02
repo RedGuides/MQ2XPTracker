@@ -290,14 +290,14 @@ public:
 			return true;
 
 		case XPTrackerMembers::TimeToDing:
-			if (!pCharData) return false;
+			if (!pLocalPC) return false;
 			switch (id)
 			{
 			case XPTrackerID::XP:
-				Dest.Float = static_cast<float>(XPTotalPerLevel - pCharData->Exp) / (GetAverages().xp * GetKPH());
+				Dest.Float = static_cast<float>(XPTotalPerLevel - pLocalPC->Exp) / (GetAverages().xp * GetKPH());
 				break;
 			case XPTrackerID::AA:
-				Dest.Float = static_cast<float>(XPTotalPerLevel - pCharData->AAExp) / (GetAverages().aa * GetKPH());
+				Dest.Float = static_cast<float>(XPTotalPerLevel - pLocalPC->AAExp) / (GetAverages().aa * GetKPH());
 				break;
 			default:
 				return false;
